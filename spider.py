@@ -17,8 +17,9 @@ handler_id = logger.add(sys.stderr, level="INFO")  # 添加一个可以修改控
 
 class DMHYSpider(object):
     def __init__(self):
-        self.start_num = 1
-        self.end_num = 1
+        # last 110
+        self.start_num = 110
+        self.end_num = 120
         self.base_url = 'http://dmhy.org/topics/list/sort_id/2/page/{}'
         self.url = ""
         self.ua = UserAgent()
@@ -88,20 +89,21 @@ class DMHYSpider(object):
         for num in range(len(self.result_set) - 1, -1, -1):
             self.cursor.execute(sqllib.CHECK_SQL_BY_DICT, self.result_set[num])
             check_result = self.cursor.fetchone()
-            if check_result[0] == 0:
+            if check_result[0] != 0:
                 del self.result_set[num]
+        logger.info("新数据检查完毕")
 
         self.cursor.executemany(sqllib.INSERT_SQL_BY_DICT, self.result_set)
         self.db.commit()
-        self.result_set = []
-
         logger.info("新增数据 {} 条".format(len(self.result_set)))
         logger.info("结果保存完成")
+
+        self.result_set = []
 
     def run(self):
         for page in range(self.start_num, self.end_num + 1):
             self.url = self.base_url.format(page)
-            logger.info("可是处理页面：{}".format(self.url))
+            logger.info("正在处理页面：{}".format(self.url))
             html_content = self.get_html()
             self.pares_html(html_content)
             self.save_data()
