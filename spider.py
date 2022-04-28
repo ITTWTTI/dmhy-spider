@@ -17,8 +17,8 @@ handler_id = logger.add(sys.stderr, level="INFO")  # 添加一个可以修改控
 
 class DMHYSpider(object):
     def __init__(self):
-        # last 110
-        self.start_num = 110
+        # last 120
+        self.start_num = 120
         self.end_num = 120
         self.base_url = 'http://dmhy.org/topics/list/sort_id/2/page/{}'
         self.url = ""
