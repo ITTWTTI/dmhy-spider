@@ -1,16 +1,15 @@
 import time
+import sqllib
+import requests
+import hashlib
+import sys
+import random
 
 from fake_useragent import UserAgent
 from loguru import logger
 from config import MysqlConfig
 from utils import ProxyUtil
 from lxml import etree
-
-import requests
-import re
-import sqllib
-import requests
-import sys
 
 # 控制日志显示级别
 logger.remove()  # 删去import logger之后自动产生的handler，不删除的话会出现重复输出的现象
@@ -19,13 +18,16 @@ handler_id = logger.add(sys.stderr, level="INFO")  # 添加一个可以修改控
 
 class DMHYSpider(object):
     def __init__(self):
-        self.page_num = 7
-        self.url = 'http://dmhy.org/topics/list/sort_id/2/page/{}'.format(self.page_num)
+        self.start_num = 1
+        self.end_num = 1
+        self.base_url = 'http://dmhy.org/topics/list/sort_id/2/page/{}'
+        self.url = ""
         self.ua = UserAgent()
         self.db = MysqlConfig.DB_CONN
         self.cursor = self.db.cursor()
         self.result_set = []
         self.is_ip_pool = False  # 是否启用ip池
+        self.hl = hashlib.md5()
 
         # 基准表达式
         self.base_expression = """//table[@class="tablesorter"]/tbody/tr"""
@@ -75,6 +77,8 @@ class DMHYSpider(object):
                 dd['name'] = element.xpath(""".//td[@class="title"]/a/text()""")[0].strip()
                 dd['magnet'] = element.xpath(""".//td/a[@title="磁力下載"]/@href""")[0]
                 dd['size'] = element.xpath(""".//td[contains(text(), "GB") or contains(text(), "MB")]/text()""")[0]
+                self.hl.update(dd['url'].encode(encoding='utf-8'))
+                dd['md5'] = self.hl.hexdigest()
                 self.result_set.append(dd)
 
                 logger.debug("当前第{}组数据".format(debug_count))
@@ -94,16 +98,22 @@ class DMHYSpider(object):
                 insert_count += 1
                 self.cursor.execute(sqllib.INSERT_SQL_BY_DICT, dd)
                 self.db.commit()
+        self.result_set = []
 
-        self.cursor.close()
-        self.db.close()
         logger.info("新增数据 {} 条".format(insert_count))
         logger.info("结果保存完成")
 
     def run(self):
-        html_content = self.get_html()
-        self.pares_html(html_content)
-        self.save_data()
+        for page in range(self.start_num, self.end_num + 1):
+            self.url = self.base_url.format(page)
+            logger.info("可是处理页面：{}".format(self.url))
+            html_content = self.get_html()
+            self.pares_html(html_content)
+            self.save_data()
+            time.sleep(random.random() * 3)
+
+        self.cursor.close()
+        self.db.close()
 
 
 if __name__ == '__main__':
