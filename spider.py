@@ -1,7 +1,6 @@
 import time
 import sqllib
 import requests
-import hashlib
 import sys
 import random
 
@@ -27,7 +26,6 @@ class DMHYSpider(object):
         self.cursor = self.db.cursor()
         self.result_set = []
         self.is_ip_pool = False  # 是否启用ip池
-        self.hl = hashlib.md5()
 
         # 基准表达式
         self.base_expression = """//table[@class="tablesorter"]/tbody/tr"""
@@ -77,8 +75,6 @@ class DMHYSpider(object):
                 dd['name'] = element.xpath(""".//td[@class="title"]/a/text()""")[0].strip()
                 dd['magnet'] = element.xpath(""".//td/a[@title="磁力下載"]/@href""")[0]
                 dd['size'] = element.xpath(""".//td[contains(text(), "GB") or contains(text(), "MB")]/text()""")[0]
-                self.hl.update(dd['url'].encode(encoding='utf-8'))
-                dd['md5'] = self.hl.hexdigest()
                 self.result_set.append(dd)
 
                 logger.debug("当前第{}组数据".format(debug_count))
@@ -88,19 +84,18 @@ class DMHYSpider(object):
         logger.info("结果处理完成")
 
     def save_data(self):
-        # 增量添加数据
-        insert_count = 0
 
-        for dd in self.result_set:
-            self.cursor.execute(sqllib.CHECK_SQL_BY_DICT, dd)
+        for num in range(len(self.result_set) - 1, -1, -1):
+            self.cursor.execute(sqllib.CHECK_SQL_BY_DICT, self.result_set[num])
             check_result = self.cursor.fetchone()
             if check_result[0] == 0:
-                insert_count += 1
-                self.cursor.execute(sqllib.INSERT_SQL_BY_DICT, dd)
-                self.db.commit()
+                del self.result_set[num]
+
+        self.cursor.executemany(sqllib.INSERT_SQL_BY_DICT, self.result_set)
+        self.db.commit()
         self.result_set = []
 
-        logger.info("新增数据 {} 条".format(insert_count))
+        logger.info("新增数据 {} 条".format(len(self.result_set)))
         logger.info("结果保存完成")
 
     def run(self):

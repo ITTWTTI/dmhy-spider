@@ -4,7 +4,7 @@ INSERT INTO `spider_dmhy`(`md5`, `publish_date`, `type`, `url`, `name`, `magnet`
 
 INSERT_SQL_BY_DICT = """
 INSERT INTO `spider_dmhy`(`md5`, `publish_date`, `type`, `url`, `name`, `magnet`, `size`, `create_date`) \
-VALUES (%(md5)s, %(publish_date)s, %(type)s, %(url)s, %(name)s, %(magnet)s, %(size)s, now());
+VALUES (MD5(%(url)s), %(publish_date)s, %(type)s, %(url)s, %(name)s, %(magnet)s, %(size)s, now());
 """
 
 CHECK_SQL = """
@@ -14,7 +14,7 @@ FROM
 	spider_dmhy
 WHERE
 	`type` = %s
-	AND md5 = %s;
+	AND md5 = MD5(%s);
 """
 
 CHECK_SQL_BY_DICT = """
@@ -23,7 +23,6 @@ SELECT
 FROM
 	spider_dmhy
 WHERE
-	`type` = %(type)s
-	AND md5 = %(md5)s;
+	md5 = MD5(%(url)s);
 """
 
