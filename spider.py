@@ -17,9 +17,10 @@ handler_id = logger.add(sys.stderr, level="INFO")  # 添加一个可以修改控
 
 class DMHYSpider(object):
     def __init__(self):
-        # last 120
-        self.start_num = 120
-        self.end_num = 120
+        # last 1500
+        # end 4437
+        self.start_num = 1500
+        self.end_num = 1500
         self.base_url = 'http://dmhy.org/topics/list/sort_id/2/page/{}'
         self.url = ""
         self.ua = UserAgent()
@@ -69,10 +70,10 @@ class DMHYSpider(object):
 
                 # 内容处理
                 dd['publish_date'] = element.xpath(""".//td[@width="98"]/span/text()""")[0]
-                logger.debug(element.xpath(""".//a//font[@color]/text()"""))
+                # logger.debug(element.xpath(""".//a//font[@color]/text()"""))
                 dd['type'] = element.xpath(""".//a//font/text()""")[0]
                 dd['url'] = element.xpath(""".//td[@class="title"]/a/@href""")[0]
-                logger.debug(element.xpath(""".//td[@class="title"]/a/text()""")[0].strip())
+                # logger.debug(element.xpath(""".//td[@class="title"]/a/text()""")[0].strip())
                 dd['name'] = element.xpath(""".//td[@class="title"]/a/text()""")[0].strip()
                 dd['magnet'] = element.xpath(""".//td/a[@title="磁力下載"]/@href""")[0]
                 dd['size'] = element.xpath(""".//td[contains(text(), "GB") or contains(text(), "MB")]/text()""")[0]
@@ -101,13 +102,19 @@ class DMHYSpider(object):
         self.result_set = []
 
     def run(self):
+        sleep_count = 0
         for page in range(self.start_num, self.end_num + 1):
             self.url = self.base_url.format(page)
             logger.info("正在处理页面：{}".format(self.url))
             html_content = self.get_html()
             self.pares_html(html_content)
             self.save_data()
-            time.sleep(random.random() * 3)
+            time.sleep(random.random() * 5)
+
+            sleep_count += 1
+            if sleep_count >= 30:
+                time.sleep(10)
+                sleep_count = 0
 
         self.cursor.close()
         self.db.close()

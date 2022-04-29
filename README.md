@@ -37,11 +37,10 @@ MysqlConfig 文件更改键值对的值即可
 ```
 
 ### 设置爬取页数
-+ 当前仅支持单页爬取
-
 spider.py文件
 ``` python
-self.page_num = page
+self.start_num = 1      开始爬取页数
+self.end_num = 100      爬取目标页数
 ```
 
 ### 运行程序
