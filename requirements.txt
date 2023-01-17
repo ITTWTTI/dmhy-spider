@@ -1,5 +1,5 @@
 alt_fake_useragent==0.2.1
-fake_useragent==0.1.11
+fake-useragent==1.1.1
 loguru==0.6.0
 lxml==4.8.0
 PyMySQL==1.0.2
